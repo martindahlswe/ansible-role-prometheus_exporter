@@ -1,28 +1,55 @@
-- name: Create exporter user
-  ansible.builtin.user:
-    name: "{{ item.name }}_exporter"
-    system: yes
-    shell: /usr/sbin/nologin
+- name: Ensure required packages installed
+  ansible.builtin.package:
+    name:
+      - git
+      - python3
+      - python3-pip
+    state: present
+  when: item.method == 'manual'
   loop: "{{ exporters }}"
 
-- name: Download exporter binary
-  ansible.builtin.get_url:
-    url: "https://github.com/{{ item.github_repo }}/releases/latest/download/{{ item.binary_name }}_linux_amd64"
-    dest: "/usr/local/bin/{{ item.binary_name }}"
-    mode: '0755'
+- name: Clone speedtest-exporter repo
+  ansible.builtin.git:
+    repo: "{{ item.repo }}"
+    dest: "{{ item.src_dir }}"
+    version: HEAD
+    update: yes
+  when: item.method == 'manual'
   loop: "{{ exporters }}"
 
-- name: Create systemd service
-  ansible.builtin.template:
-    src: exporter.service.j2
-    dest: "/etc/systemd/system/{{ item.name }}-exporter.service"
-    mode: '0644'
+- name: Install Python deps
+  ansible.builtin.pip:
+    requirements: "{{ item.src_dir }}/src/requirements.txt"
+    executable: pip3
+  when: item.method == 'manual'
   loop: "{{ exporters }}"
 
-- name: Reload systemd and enable service
+- name: Deploy systemd service for manual Python exporter
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/{{ item.name }}.service
+    content: |
+      [Unit]
+      Description={{ item.name | capitalize }} Exporter (Python)
+      After=network.target
+
+      [Service]
+      User={{ item.user }}
+      WorkingDirectory={{ item.src_dir }}
+      ExecStart=/usr/bin/python3 {{ item.src_dir }}/src/exporter.py
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+  when: item.method == 'manual'
+  loop: "{{ exporters }}"
+
+- name: Ensure {{ item.name }} service started
   ansible.builtin.systemd:
     daemon_reload: yes
-    name: "{{ item.name }}-exporter"
-    enabled: true
+    name: "{{ item.name }}"
     state: started
+    enabled: yes
+  when: item.method == 'manual'
   loop: "{{ exporters }}"
+

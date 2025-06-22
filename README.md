@@ -14,10 +14,12 @@ Define exporters in your playbook or inventory:
 
 ```yaml
 exporters:
+exporters:
   - name: speedtest
-    github_repo: MiguelNdeCarvalho/speedtest-exporter
-    binary_name: speedtest-exporter
-    port: 9798
+    method: manual
+    repo: https://github.com/MiguelNdeCarvalho/speedtest-exporter.git
+    src_dir: /opt/speedtest-exporter
+    user: speedtest_exporter
 
   - name: pve
     github_repo: prometheus-pve/prometheus-pve-exporter
