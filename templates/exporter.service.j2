@@ -1,0 +1,12 @@
+[Unit]
+Description={{ item.name | capitalize }} Exporter
+After=network.target
+
+[Service]
+User={{ item.name }}_exporter
+ExecStart=/usr/local/bin/{{ item.binary_name }} {% if item.args is defined %}{{ item.args }}{% endif %}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

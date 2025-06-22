@@ -1,0 +1,28 @@
+- name: Create exporter user
+  ansible.builtin.user:
+    name: "{{ item.name }}_exporter"
+    system: yes
+    shell: /usr/sbin/nologin
+  loop: "{{ exporters }}"
+
+- name: Download exporter binary
+  ansible.builtin.get_url:
+    url: "https://github.com/{{ item.github_repo }}/releases/latest/download/{{ item.binary_name }}_linux_amd64"
+    dest: "/usr/local/bin/{{ item.binary_name }}"
+    mode: '0755'
+  loop: "{{ exporters }}"
+
+- name: Create systemd service
+  ansible.builtin.template:
+    src: exporter.service.j2
+    dest: "/etc/systemd/system/{{ item.name }}-exporter.service"
+    mode: '0644'
+  loop: "{{ exporters }}"
+
+- name: Reload systemd and enable service
+  ansible.builtin.systemd:
+    daemon_reload: yes
+    name: "{{ item.name }}-exporter"
+    enabled: true
+    state: started
+  loop: "{{ exporters }}"

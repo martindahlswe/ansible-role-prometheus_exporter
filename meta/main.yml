@@ -1,0 +1,22 @@
+galaxy_info:
+  role_name: prometheus_exporter
+  author: Martin Dahl 
+  description: Install and configure Prometheus-compatible exporters from GitHub.
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms:
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+  galaxy_tags:
+    - prometheus
+    - exporters
+    - monitoring
+    - systemd
+
+dependencies: []
